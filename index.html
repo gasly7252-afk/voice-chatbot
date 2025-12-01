@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>VoiceMood AI · Voice + Emotion Detection Chatbot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-dark: #020617;
+      --accent-red: #f97373;
+      --accent-cyan: #22d3ee;
+      --accent-purple: #a855f7;
+      --accent-green: #22c55e;
+    }
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #e5e7eb;
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 60%, #020617 100%);
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    /* Valorant-like background vibe */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(248,113,113,0.16), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(56,189,248,0.2), transparent 55%),
+        linear-gradient(145deg, rgba(15,23,42,1) 10%, rgba(15,23,42,0.95) 50%, rgba(15,23,42,1) 90%);
+    }
+    .bg-lines {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(115deg, rgba(148,163,184,0.07) 1px, transparent 1px),
+        linear-gradient(205deg, rgba(30,64,175,0.18) 1px, transparent 1px);
+      background-size: 80px 80px, 140px 140px;
+      opacity: 0.45;
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header.nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(to right, rgba(15,23,42,0.98), rgba(15,23,42,0.86));
+      border-bottom: 1px solid rgba(51,65,85,0.9);
+      box-shadow: 0 14px 40px rgba(15,23,42,0.95);
+    }
+    .nav-inner {
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 0.75rem;
+      background: conic-gradient(from 150deg, var(--accent-red), var(--accent-purple), var(--accent-cyan), var(--accent-green), var(--accent-red));
+      padding: 2px;
+      box-shadow: 0 0 24px rgba(248,113,113,0.8);
+    }
+    .logo-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 30% 0, #0b1120, #020617);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e5e7eb;
+      font-size: 1.1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.75rem;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 700;
+    }
+    .nav-links a {
+      color: #e5e7eb;
+      text-decoration: none;
+      position: relative;
+      padding-bottom: 4px;
+    }
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-red), var(--accent-cyan));
+      transition: width 0.22s ease;
+    }
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-cta {
+      border-radius: 999px;
+      border: 1px solid rgba(248,250,252,0.85);
+      padding: 0.5rem 1.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      color: #f9fafb;
+      cursor: pointer;
+      box-shadow: 0 12px 32px rgba(248,113,113,0.9);
+    }
+
+    main {
+      position: relative;
+      z-index: 5;
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 1.75rem 1.5rem 3.5rem;
+    }
+
+    /* Shared section styling */
+    .section-tag {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      color: #9ca3af;
+      margin-bottom: 0.6rem;
+    }
+    .section-heading {
+      font-size: 2.6rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #f9fafb;
+      margin-bottom: 0.85rem;
+    }
+    .section-heading span {
+      background: linear-gradient(135deg, var(--accent-red), var(--accent-purple), var(--accent-cyan));
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .section-sub {
+      font-size: 1rem;
+      color: #cbd5f5;
+      max-width: 32rem;
+    }
+
+    /* Hero / HOME */
+    #home {
+      min-height: 92vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 2.4rem;
+      align-items: center;
+      padding-top: 1.8rem;
+      padding-bottom: 3.5rem;
+      border-bottom: 1px solid rgba(31,41,55,0.95);
+    }
+    .hero-left-card {
+      position: relative;
+      border-radius: 1.75rem;
+      padding: 2rem 2.1rem 2.4rem;
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.98), rgba(15,23,42,0.96));
+      border: 1px solid rgba(75,85,99,1);
+      box-shadow: 0 24px 60px rgba(15,23,42,1);
+      overflow: hidden;
+    }
+    .hero-left-card::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(248,113,113,0.15), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(56,189,248,0.25), transparent 50%);
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1.4rem 0;
+      font-size: 0.8rem;
+      color: #e0f2fe;
+      align-items: center;
+    }
+    .hero-pill {
+      padding: 0.25rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.8);
+      background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(15,23,42,0.98));
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      margin-top: 1.2rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .btn-primary {
+      padding: 0.8rem 1.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(248,250,252,0.8);
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+      color: #022c22;
+      cursor: pointer;
+      box-shadow: 0 14px 40px rgba(34,197,94,0.9);
+    }
+    .btn-secondary {
+      padding: 0.7rem 1.4rem;
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,1);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: #020617;
+      color: #e5e7eb;
+      cursor: pointer;
+    }
+    .hero-note {
+      font-size: 0.8rem;
+      color: #a5f3fc;
+      margin-top: 0.4rem;
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 1.4rem;
+      left: 2.1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: #9ca3af;
+    }
+    .scroll-indicator span {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(to bottom, rgba(148,163,184,0.1), rgba(148,163,184,0.9));
+      animation: scrollLine 1.4s ease-in-out infinite;
+    }
+    @keyframes scrollLine {
+      0% { transform: scaleY(0.2); opacity: 0.1; }
+      50% { transform: scaleY(1); opacity: 1; }
+      100% { transform: scaleY(0.2); opacity: 0.1; }
+    }
+
+    /* Right hero (mock "agent card" vibe) */
+    .hero-right-card {
+      border-radius: 1.5rem;
+      padding: 1.3rem 1.3rem 1.5rem;
+      background: radial-gradient(circle at top, #020617, #020617 50%, #020617 100%);
+      border: 1px solid rgba(75,85,99,0.9);
+      box-shadow: 0 24px 55px rgba(15,23,42,1);
+    }
+    .hero-right-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+    .hero-right-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #9ca3af;
+    }
+    .hero-right-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.8);
+      color: #e5e7eb;
+    }
+    .mic-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, var(--accent-green), #16a34a 40%, #052e16 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 44px rgba(22,163,74,1);
+      font-size: 1.6rem;
+      animation: pulseMic 1.7s ease-in-out infinite;
+    }
+    @keyframes pulseMic {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22,163,74,0.85); }
+      70% { transform: scale(1.08); box-shadow: 0 0 0 22px rgba(22,163,74,0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+    }
+
+    .emotion-chips {
+      display: flex;
+      gap: 0.4rem;
+      margin: 0.6rem 0;
+      font-size: 0.72rem;
+    }
+    .emotion-chips span {
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .emo-happy { background: rgba(250,250,46,0.12); color: #facc15; border: 1px solid rgba(234,179,8,0.7); }
+    .emo-sad { background: rgba(59,130,246,0.12); color: #93c5fd; border: 1px solid rgba(59,130,246,0.7); }
+    .emo-angry { background: rgba(248,113,113,0.14); color: #fecaca; border: 1px solid rgba(248,113,113,0.8); }
+
+    .status-line {
+      font-size: 0.78rem;
+      color: #e5e7eb;
+      margin-bottom: 0.4rem;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent-green);
+      box-shadow: 0 0 18px rgba(34,197,94,1);
+      display: inline-block;
+      margin-right: 0.35rem;
+    }
+    .bubble {
+      margin-top: 0.3rem;
+      padding: 0.5rem 0.7rem;
+      border-radius: 0.8rem;
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(55,65,81,0.95);
+      font-size: 0.78rem;
+    }
+    .chip-small {
+      margin-top: 0.6rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.18rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.8);
+      font-size: 0.7rem;
+      color: #cbd5f5;
+    }
+
+    /* ABOUT / HELP sections stacked for scroll */
+    section.content-block {
+      padding: 3.4rem 0 3.6rem;
+      border-bottom: 1px solid rgba(31,41,55,0.95);
+    }
+    .columns-2 {
+      margin-top: 1.8rem;
+      display: grid;
+      grid-template-columns: minmax(0,1.1fr) minmax(0,1fr);
+      gap: 1.7rem;
+    }
+    .panel {
+      border-radius: 1.4rem;
+      padding: 1.4rem 1.5rem 1.7rem;
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.96), rgba(15,23,42,0.98));
+      border: 1px solid rgba(55,65,81,1);
+      box-shadow: 0 20px 50px rgba(15,23,42,1);
+      font-size: 0.9rem;
+    }
+    .panel-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      margin-bottom: 0.35rem;
+      color: #f9fafb;
+    }
+    .panel-pill {
+      font-size: 0.75rem;
+      display: inline-block;
+      padding: 0.18rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.9);
+      color: #bfdbfe;
+      margin-bottom: 0.65rem;
+    }
+    .panel p {
+      color: #cbd5f5;
+      margin-bottom: 0.5rem;
+    }
+    .panel ul {
+      list-style: none;
+      margin-top: 0.4rem;
+    }
+    .panel li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+      margin-bottom: 0.3rem;
+      color: #e5e7eb;
+    }
+    .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--accent-cyan);
+      margin-top: 0.45rem;
+    }
+
+    footer {
+      padding: 1rem 1.5rem 1.3rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      background: linear-gradient(to right, #020617, #020617);
+      border-top: 1px solid rgba(31,41,55,1);
+    }
+
+    @media (max-width: 900px) {
+      #home {
+        grid-template-columns: minmax(0,1fr);
+        min-height: auto;
+        padding-bottom: 2.8rem;
+      }
+      .hero-right-card { order: -1; }
+      .nav-links { display: none; }
+      .section-heading {
+        font-size: 2.1rem;
+      }
+      .columns-2 {
+        grid-template-columns: minmax(0,1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  <div class="bg-lines"></div>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="logo">
+        <div class="logo-badge">
+          <div class="logo-inner">VA</div>
+        </div>
+        <span>VoiceMood AI</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#about">About Us</a>
+        <a href="#help">Help Desk</a>
+      </nav>
+      <button class="nav-cta">Login / Register</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HOME / HERO -->
+    <section id="home">
+      <div class="hero-left-card">
+        <div class="hero-content">
+          <div class="section-tag">Mini Project · CSE</div>
+          <h1 class="section-heading"><span>Home</span> · Voice + Emotion Detection Chatbot</h1>
+          <p class="section-sub">
+            Inspired by modern game landing pages, this site lets users scroll through a cinematic overview of your chatbot that listens to your voice, detects your mood, and responds like a teammate who actually cares.
+          </p>
+
+          <div class="hero-pill-row">
+            <span class="hero-pill">🎤 Voice Input</span>
+            <span class="hero-pill">🧠 Whisper Speech-to-Text</span>
+            <span class="hero-pill">💓 Emotion Model (RAVDESS)</span>
+            <span class="hero-pill">🤖 Empathetic AI Replies</span>
+          </div>
+
+          <div class="hero-cta-row">
+            <button class="btn-primary">Start Using</button>
+            <button class="btn-secondary">Learn Demo</button>
+          </div>
+          <p class="hero-note">
+            
+          </p>
+        </div>
+        <div class="scroll-indicator">
+          <span></span>
+          <div>Scroll to explore</div>
+        </div>
+      </div>
+
+      <div class="hero-right-card">
+        <div class="hero-right-top">
+          <div>
+            <div class="hero-right-title">Live Emotion HUD</div>
+            
+          </div>
+          <div class="hero-right-badge">Prototype</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:0.7rem 0 0.8rem;">
+          <div style="display:flex;flex-direction:column;gap:0.3rem;">
+            <div style="font-size:0.86rem;color:#cbd5f5;">User talking...</div>
+            <div class="emotion-chips">
+              <span class="emo-happy">Happy</span>
+              <span class="emo-sad">Stressed</span>
+              <span class="emo-angry">Frustrated</span>
+            </div>
+          </div>
+          <div class="mic-icon">🎙️</div>
+        </div>
+        <p class="status-line">
+          <span class="status-dot"></span>
+          Listening, extracting pitch, then sending to your emotion model...
+        </p>
+        <div class="bubble">
+          <strong>Transcript:</strong> “I’m nervous about tomorrow’s exam and not sure where to start revising.”
+        </div>
+        <div class="bubble" style="margin-top:0.4rem;">
+          <strong>Bot (empathetic):</strong> “Totally understandable. Let’s pick one subject and create a simple 30‑minute plan together.”
+        </div>
+        <div class="chip-small">
+          🔧This is a demo project by us.
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT US -->
+    <section id="about" class="content-block">
+      <div class="section-tag">Section 02</div>
+      <h2 class="section-heading"><span>About Us</span></h2>
+      <p class="section-sub">
+        The AI that cares and listens to you and acts as a shadow companion.
+      </p>
+
+      <div class="columns-2">
+        <div class="panel">
+          <div class="panel-title">Project Story</div>
+          <span class="panel-pill">Voice + Emotion Detection Chatbot</span>
+          <p>
+            Most chatbots only look at plain text and ignore how the user actually feels. VoiceMood AI is built to fix that by combining speech recognition and emotion analysis to make responses feel more human and supportive.
+          </p>
+          <ul>
+            <li><span class="dot"></span> Understands both what you say (text) and how you say it (tone, pitch, emotion).</li>
+            <li><span class="dot"></span> Can soften responses when users sound sad or stressed, and celebrate when they sound happy.</li>
+            <li><span class="dot"></span> Ideal for support apps, study helpers, mental health check-ins, or customer service bots.</li>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Tech Breakdown</div>
+          <span class="panel-pill">Phase-wise execution plan</span>
+          <ul>
+            <li><span class="dot"></span>1.Build the UI with mic button and this scrolling landing page for a clean demo.</li>
+            <li><span class="dot"></span>2.Capture audio in the browser and send to Flask backend.</li>
+            <li><span class="dot"></span>3.Use Whisper or similar API to convert speech to text.</li>
+            <li><span class="dot"></span>4.Extract features (pitch, MFCC, energy) and run an emotion classifier trained on datasets like RAVDESS.</li>
+            <li><span class="dot"></span>5.Combine text + emotion and send back an empathetic reply from your chatbot logic.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- HELP DESK -->
+    <section id="help" class="content-block">
+      <div class="section-tag">Section 03</div>
+      <h2 class="section-heading"><span>Help Desk</span></h2>
+      <p class="section-sub">
+        A quick support section so anyone viewing your site (judge, friend, or teacher) knows how to run and extend this project.
+      </p>
+
+      <div class="columns-2">
+        <div class="panel">
+          <div class="panel-title">How to Run</div>
+          <span class="panel-pill">Frontend only</span>
+          <ul>
+            <li><span class="dot"></span> Click on the microphone icon to begin or click on the "Start using" button.</li>
+            <li><span class="dot"></span> Start saying what you want.</li>
+            <li><span class="dot"></span> The AI might take some time to give a response.</li>
+          </ul>
+          <div style="margin-top:0.6rem;color:#cbd5f5;font-size:0.88rem;">
+            If the page is unresponsive refresh it or login again.
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Connect with us</div>
+          <span class="panel-pill">Next steps</span>
+          <ul>
+            <li><span class="dot"></span> Feel free to register any complaints on our E-mail--abc@gmail.com.</li>
+            <li><span class="dot"></span> This is a demo project it might give wrong responses.</li>
+            <li><span class="dot"></span> We are available 24x7 to solve your any issues.</li>
+            
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Voice + Emotion detection AI · VOICEMOOD AI
+  </footer>
+</body>
+</html>
